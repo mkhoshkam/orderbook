@@ -1,4 +1,4 @@
-module orderbook
+module github.com/mkhoshkam/orderbook
 
 go 1.22.0
 
