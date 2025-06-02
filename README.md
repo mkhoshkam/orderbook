@@ -33,7 +33,13 @@ The engine consists of several key components:
 ## Installation
 
 ```bash
-go mod tidy
+go get github.com/mkhoshkam/orderbook@v1.0.0
+```
+
+Or to get the latest version:
+
+```bash
+go get github.com/mkhoshkam/orderbook
 ```
 
 ## Usage
@@ -47,7 +53,7 @@ import (
     "fmt"
     "time"
     "github.com/shopspring/decimal"
-    "orderbook/engine"
+    "github.com/mkhoshkam/orderbook/engine"
 )
 
 func main() {
