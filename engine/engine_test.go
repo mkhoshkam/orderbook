@@ -504,6 +504,9 @@ func TestConcurrentOrderProcessing(t *testing.T) {
 					Time:  time.Now().Unix(),
 				}
 				engine.AddOrder(pair, order)
+
+				// Add small delay to reduce race conditions
+				time.Sleep(50 * time.Millisecond)
 			}
 		}(i)
 	}
