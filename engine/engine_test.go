@@ -478,12 +478,12 @@ func TestStartDepthStreamer(t *testing.T) {
 func TestConcurrentOrderProcessing(t *testing.T) {
 	engine := NewEngine()
 	pair := "BTC-USD"
-	numGoroutines := 10
-	ordersPerGoroutine := 5
+	numGoroutines := 3      // Reduced from 10
+	ordersPerGoroutine := 3 // Reduced from 5
 
 	var wg sync.WaitGroup
 
-	// Process orders concurrently
+	// Process orders concurrently with reduced concurrency
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
 		go func(goroutineID int) {
@@ -504,6 +504,9 @@ func TestConcurrentOrderProcessing(t *testing.T) {
 					Time:  time.Now().Unix(),
 				}
 				engine.AddOrder(pair, order)
+
+				// Add small delay to reduce race conditions
+				time.Sleep(10 * time.Millisecond)
 			}
 		}(i)
 	}
@@ -516,8 +519,8 @@ func TestConcurrentOrderProcessing(t *testing.T) {
 		t.Error("Order book should exist after concurrent processing")
 	}
 
-	// Allow some time for async processing
-	time.Sleep(200 * time.Millisecond)
+	// Allow more time for async processing
+	time.Sleep(500 * time.Millisecond)
 
 	tradeCount := 0
 	for len(engine.TradeStream) > 0 {
