@@ -31,3 +31,17 @@ type PriceUpdate struct {
 	BestAsk  decimal.Decimal
 	AvgPrice decimal.Decimal
 }
+
+type DepthLevel struct {
+	Price      decimal.Decimal
+	Quantity   decimal.Decimal
+	TradeCount int
+}
+
+type DepthUpdate struct {
+	Pair       string
+	Bids       []DepthLevel
+	Asks       []DepthLevel
+	Timestamp  int64
+	TradeCount int64
+}
