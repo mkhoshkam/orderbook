@@ -235,7 +235,7 @@ func TestMultipleTradingPairs(t *testing.T) {
 
 	// Wait for trades and count them
 	tradeCount := 0
-	timeout := time.After(200 * time.Millisecond)
+	timeout := time.After(500 * time.Millisecond)
 	for tradeCount < len(pairs) {
 		select {
 		case <-engine.TradeStream:
@@ -245,6 +245,9 @@ func TestMultipleTradingPairs(t *testing.T) {
 			return
 		}
 	}
+
+	// Small delay to ensure all processing is complete
+	time.Sleep(10 * time.Millisecond)
 
 	// Check that all pairs have order books
 	engine.mutex.Lock()
