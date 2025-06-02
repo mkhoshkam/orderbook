@@ -45,3 +45,24 @@ type DepthUpdate struct {
 	Timestamp  int64
 	TradeCount int64
 }
+
+type FillStatus string
+
+const (
+	PartiallyFilled FillStatus = "PARTIALLY_FILLED"
+	Filled          FillStatus = "FILLED"
+	New             FillStatus = "NEW"
+)
+
+type OrderFill struct {
+	OrderID      string
+	Pair         string
+	Side         Side
+	OriginalQty  decimal.Decimal
+	ExecutedQty  decimal.Decimal
+	RemainingQty decimal.Decimal
+	Price        decimal.Decimal
+	FillPrice    decimal.Decimal
+	Status       FillStatus
+	Timestamp    int64
+}
