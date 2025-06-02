@@ -263,6 +263,71 @@ See the `examples/` directory for complete usage examples:
 - **Multi-pair Trading** - Managing multiple trading pairs
 - **High Frequency** - Low-latency order processing
 
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment with automated testing and coverage reporting.
+
+### GitHub Actions Workflow
+
+The workflow automatically:
+
+- ✅ **Builds** the project on every push and pull request
+- ✅ **Runs all tests** with comprehensive coverage reporting
+- ✅ **Generates coverage reports** in HTML format
+- ✅ **Updates coverage badges** on the main branch
+- ✅ **Posts coverage information** to pull request comments
+- ✅ **Uploads coverage to Codecov** (if configured)
+
+### Setting Up Repository Permissions
+
+To enable pull request comments, configure your repository settings:
+
+1. Go to **Settings → Actions → General**
+2. Under **Workflow permissions**, select **"Read and write permissions"**
+3. Enable **"Allow GitHub Actions to create and approve pull requests"**
+
+### Optional: Codecov Integration
+
+To enable Codecov uploads:
+
+1. Sign up at [codecov.io](https://codecov.io)
+2. Add your repository
+3. Get your upload token
+4. Add it as a repository secret: **Settings → Secrets → Actions → New repository secret**
+   - Name: `CODECOV_TOKEN`
+   - Value: Your Codecov upload token
+
+### Coverage Reports
+
+Coverage information is available in multiple formats:
+
+- **GitHub Actions Summary** - Detailed coverage breakdown in the Actions tab
+- **Pull Request Comments** - Coverage percentage posted to PRs automatically
+- **HTML Reports** - Generated as artifacts in the Actions runs
+- **Codecov Dashboard** - If Codecov integration is configured
+
+### Workflow Status
+
+Current build status: [![Go](../../actions/workflows/go.yml/badge.svg)](../../actions/workflows/go.yml)
+
+### Manual Testing
+
+You can also run the same commands locally:
+
+```bash
+# Build the project
+go build -v ./...
+
+# Run tests with coverage
+go test -v -coverprofile=coverage.out -covermode=atomic ./...
+
+# Generate HTML coverage report
+go tool cover -html=coverage.out -o=coverage.html
+
+# View coverage summary
+go tool cover -func=coverage.out
+```
+
 ## Contributing
 
 1. Fork the repository
