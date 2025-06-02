@@ -53,10 +53,16 @@ jobs:
         fail_ci_if_error: false
 
     - name: Coverage Badge
-      uses: tj-actions/coverage-badge-go@v2
+      uses: ncruces/go-coverage-report@v0
       if: github.ref == 'refs/heads/main'
       with:
-        filename: coverage.out
+        coverage-file: coverage.out
+        output-dir: .
+        badge-style: flat
+        report: true
+        chart: false
+        amend: true
+      continue-on-error: true
 
     - name: Verify Changed files
       uses: tj-actions/verify-changed-files@v20
