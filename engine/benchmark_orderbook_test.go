@@ -5,6 +5,8 @@ import (
     "github.com/shopspring/decimal"
     "log"
     "math/rand/v2"
+    "runtime"
+    "runtime/debug"
     "testing"
     "time"
 )
@@ -15,6 +17,9 @@ var tradeCount = 0
 var orders = make([]Order, 0, 2000000)
 
 func init() {
+    // disable garbage collection for benchmark tests
+    debug.SetGCPercent(-1)
+
     log.Println("Generating random order data for benchmark tests")
     for i := 0; i < 2000000; i++ {
         randomPrice := rand.Float64() * 150000.0
@@ -35,6 +40,8 @@ func init() {
         orders = append(orders, order)
     }
 
+    // Run garbage collection after generating orders to clean up memory
+    runtime.GC()
 }
 
 func BenchmarkWithRandomData(benchmark *testing.B) {
@@ -50,7 +57,9 @@ func BenchmarkWithRandomData(benchmark *testing.B) {
     go func() {
         for fill := range fillCh {
             _ = fill
-            fillCount++
+            if fill.Status == Filled || fill.Status == PartiallyFilled {
+                fillCount++
+            }
         }
     }()
 
@@ -66,6 +75,9 @@ func BenchmarkWithRandomData(benchmark *testing.B) {
 
     close(tradeCh)
     close(fillCh)
+
+    // Run garbage collection after each benchmark run to clean up memory
+    runtime.GC()
 
     fmt.Printf("Total trades processed: %d, Total orders filled: %d\n", tradeCount, fillCount)
 }
