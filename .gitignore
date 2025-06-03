@@ -65,3 +65,5 @@ market_data_*.log
 # Performance analysis
 flamegraph*.svg
 pprof_* 
+
+memory-bank/
