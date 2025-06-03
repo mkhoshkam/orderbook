@@ -13,14 +13,14 @@ func main() {
     e.StartPriceBroadcaster()
     e.StartDepthStreamer(5)
 
-    // go func() {
-    //     for trade := range e.TradeStream {
-    //         fmt.Printf("[TRADE] %s %.4f @ %.2f\n",
-    //             trade.Pair,
-    //             trade.Qty.InexactFloat64(),
-    //             trade.Price.InexactFloat64())
-    //     }
-    // }()
+    go func() {
+        for trade := range e.TradeStream {
+            fmt.Printf("[TRADE] %s %.4f @ %.2f\n",
+                trade.Pair,
+                trade.Qty.InexactFloat64(),
+                trade.Price.InexactFloat64())
+        }
+    }()
 
     go func() {
         for price := range e.PriceUpdates {
@@ -47,38 +47,40 @@ func main() {
         }
     }()
 
-    // go func() {
-    //     for depth := range e.DepthUpdates {
-    //         fmt.Printf("\n[DEPTH] %s (Trades: %d)\n", depth.Pair, depth.TradeCount)
-    //
-    //         fmt.Println("BIDS")
-    //         for i, bid := range depth.Bids {
-    //             fmt.Printf("  %d. %.4f | %.4f (%d orders)\n",
-    //                 i+1,
-    //                 bid.Price.InexactFloat64(),
-    //                 bid.Quantity.InexactFloat64(),
-    //                 bid.TradeCount)
-    //         }
-    //         fmt.Println("---")
-    //
-    //         for i, ask := range depth.Asks {
-    //             fmt.Printf("  %d. %.4f | %.4f (%d orders)\n",
-    //                 i+1,
-    //                 ask.Price.InexactFloat64(),
-    //                 ask.Quantity.InexactFloat64(),
-    //                 ask.TradeCount)
-    //         }
-    //         fmt.Println("ASKS")
-    //         time.Sleep(2 * time.Second) // Sleep to avoid flooding the console
-    //     }
-    // }()
+    go func() {
+        for depth := range e.DepthUpdates {
+            fmt.Printf("\n[DEPTH] %s (Trades: %d)\n", depth.Pair, depth.TradeCount)
+
+            fmt.Println("BIDS")
+            for i, bid := range depth.Bids {
+                fmt.Printf("  %d. %.4f | %.4f (%d orders)\n",
+                    i+1,
+                    bid.Price.InexactFloat64(),
+                    bid.Quantity.InexactFloat64(),
+                    bid.TradeCount)
+            }
+            fmt.Println("---")
+
+            for i, ask := range depth.Asks {
+                fmt.Printf("  %d. %.4f | %.4f (%d orders)\n",
+                    i+1,
+                    ask.Price.InexactFloat64(),
+                    ask.Quantity.InexactFloat64(),
+                    ask.TradeCount)
+            }
+            fmt.Println("ASKS")
+            time.Sleep(2 * time.Second) // Sleep to avoid flooding the console
+        }
+    }()
 
     fmt.Println("Adding orders...")
 
-    // for i := 0; i < 10; i++ {
+    // Bulk order generation for testing
+
+    // for i := 0; i < 10000; i++ {
     //     time.Sleep(200 * time.Millisecond)
     //     randomNumber := rand.Intn(999) // Random number between 0 and 999
-    //     randomPair := randomNumber % 1 // 0 for BTC/USDT, 1 for ETH/USDT
+    //     randomPair := randomNumber % 4 // 0 for BTC/USDT, 1 for ETH/USDT
     //
     //     var pair string
     //     switch randomPair {
@@ -107,8 +109,6 @@ func main() {
     //     }
     //     e.AddOrder(pair, order)
     //
-    //     // fmt.Printf("Added order %s: %s %.4f @ %.2f\n", order.ID, order.Side, order.Qty.InexactFloat64(), order.Price.InexactFloat64())
-    //
     // }
 
     e.AddOrder("BTC/USDT", engine.Order{
@@ -126,57 +126,57 @@ func main() {
         Qty:   decimal.NewFromFloat(1),
         Time:  time.Now().Unix(),
     })
-    //
-    // e.AddOrder("BTC/USDT", engine.Order{
-    // 	ID:    "SELL-2",
-    // 	Side:  engine.Sell,
-    // 	Price: decimal.NewFromFloat(30200),
-    // 	Qty:   decimal.NewFromFloat(0.6),
-    // 	Time:  time.Now().Unix(),
-    // })
-    //
-    // time.Sleep(2 * time.Second)
-    // fmt.Println("\n=== Adding market buy order (should trigger fills) ===")
-    //
-    // // This order will match with SELL-1 (0.4) and partially with SELL-2
-    // e.AddOrder("BTC/USDT", engine.Order{
-    // 	ID:    "BUY-MARKET",
-    // 	Side:  engine.Buy,
-    // 	Price: decimal.NewFromFloat(30300), // High price to trigger market execution
-    // 	Qty:   decimal.NewFromFloat(0.8),   // More than SELL-1, will trigger partial fill of SELL-2
-    // 	Time:  time.Now().Unix(),
-    // })
-    //
-    // time.Sleep(2 * time.Second)
-    // fmt.Println("\n=== Adding large sell order (should partially fill) ===")
-    //
-    // // This will match with remaining buy orders but won't fill completely
-    // e.AddOrder("BTC/USDT", engine.Order{
-    // 	ID:    "SELL-LARGE",
-    // 	Side:  engine.Sell,
-    // 	Price: decimal.NewFromFloat(29000), // Low price to trigger market execution
-    // 	Qty:   decimal.NewFromFloat(2.0),   // Large quantity, will be partially filled
-    // 	Time:  time.Now().Unix(),
-    // })
-    //
-    // time.Sleep(3 * time.Second)
-    // fmt.Println("\n=== Adding ETH orders ===")
-    //
-    // e.AddOrder("ETH/USDT", engine.Order{
-    // 	ID:    "ETH-BUY-1",
-    // 	Side:  engine.Buy,
-    // 	Price: decimal.NewFromFloat(2000),
-    // 	Qty:   decimal.NewFromFloat(1.0),
-    // 	Time:  time.Now().Unix(),
-    // })
-    //
-    // e.AddOrder("ETH/USDT", engine.Order{
-    // 	ID:    "ETH-SELL-1",
-    // 	Side:  engine.Sell,
-    // 	Price: decimal.NewFromFloat(2010),
-    // 	Qty:   decimal.NewFromFloat(0.8),
-    // 	Time:  time.Now().Unix(),
-    // })
+
+    e.AddOrder("BTC/USDT", engine.Order{
+        ID:    "SELL-2",
+        Side:  engine.Sell,
+        Price: decimal.NewFromFloat(30200),
+        Qty:   decimal.NewFromFloat(0.6),
+        Time:  time.Now().Unix(),
+    })
+
+    time.Sleep(2 * time.Second)
+    fmt.Println("\n=== Adding market buy order (should trigger fills) ===")
+
+    // This order will match with SELL-1 (0.4) and partially with SELL-2
+    e.AddOrder("BTC/USDT", engine.Order{
+        ID:    "BUY-MARKET",
+        Side:  engine.Buy,
+        Price: decimal.NewFromFloat(30300), // High price to trigger market execution
+        Qty:   decimal.NewFromFloat(0.8),   // More than SELL-1, will trigger partial fill of SELL-2
+        Time:  time.Now().Unix(),
+    })
+
+    time.Sleep(2 * time.Second)
+    fmt.Println("\n=== Adding large sell order (should partially fill) ===")
+
+    // This will match with remaining buy orders but won't fill completely
+    e.AddOrder("BTC/USDT", engine.Order{
+        ID:    "SELL-LARGE",
+        Side:  engine.Sell,
+        Price: decimal.NewFromFloat(29000), // Low price to trigger market execution
+        Qty:   decimal.NewFromFloat(2.0),   // Large quantity, will be partially filled
+        Time:  time.Now().Unix(),
+    })
+
+    time.Sleep(3 * time.Second)
+    fmt.Println("\n=== Adding ETH orders ===")
+
+    e.AddOrder("ETH/USDT", engine.Order{
+        ID:    "ETH-BUY-1",
+        Side:  engine.Buy,
+        Price: decimal.NewFromFloat(2000),
+        Qty:   decimal.NewFromFloat(1.0),
+        Time:  time.Now().Unix(),
+    })
+
+    e.AddOrder("ETH/USDT", engine.Order{
+        ID:    "ETH-SELL-1",
+        Side:  engine.Sell,
+        Price: decimal.NewFromFloat(2010),
+        Qty:   decimal.NewFromFloat(0.8),
+        Time:  time.Now().Unix(),
+    })
 
     select {}
 }

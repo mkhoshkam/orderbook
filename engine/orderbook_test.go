@@ -491,7 +491,7 @@ func TestOrderFillAtTopPriceBuy(t *testing.T) {
                     t.Errorf("Expected 'BUY-1' executed quantity 1, got %s", fill.ExecutedQty.String())
                 }
                 if !fill.Price.Equal(decimal.NewFromFloat(1)) {
-                    t.Errorf("Expected 'BUY-1' fill price 2, got %s", fill.Price.String())
+                    t.Errorf("Expected 'BUY-1' fill price 1, got %s", fill.Price.String())
                 }
 
                 if fill.Status != Filled {
@@ -504,7 +504,7 @@ func TestOrderFillAtTopPriceBuy(t *testing.T) {
                     t.Errorf("Expected 'SELL-1' executed quantity 1, got %s", fill.ExecutedQty.String())
                 }
                 if !fill.Price.Equal(decimal.NewFromFloat(1)) {
-                    t.Errorf("Expected 'SELL-1' fill price 2, got %s", fill.Price.String())
+                    t.Errorf("Expected 'SELL-1' fill price 1, got %s", fill.Price.String())
                 }
 
                 if fill.Status != Filled {
