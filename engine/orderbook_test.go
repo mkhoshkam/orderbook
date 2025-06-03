@@ -419,7 +419,6 @@ func TestOrderFillAtTopPriceSell(t *testing.T) {
     for i := 0; i < 2; i++ {
         select {
         case fill := <-fillCh:
-            t.Logf("Received fill: %+v", fill)
             if fill.OrderID == "BUY-1" {
                 if !fill.ExecutedQty.Equal(decimal.NewFromFloat(1)) {
                     t.Errorf("Expected 'BUY-1' executed quantity 1, got %s", fill.ExecutedQty.String())
@@ -487,7 +486,6 @@ func TestOrderFillAtTopPriceBuy(t *testing.T) {
     for i := 0; i < 2; i++ {
         select {
         case fill := <-fillCh:
-            t.Logf("Received fill: %+v", fill)
             if fill.OrderID == "BUY-1" {
                 if !fill.ExecutedQty.Equal(decimal.NewFromFloat(1)) {
                     t.Errorf("Expected 'BUY-1' executed quantity 1, got %s", fill.ExecutedQty.String())
