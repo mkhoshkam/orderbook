@@ -4,10 +4,10 @@
 package engine
 
 import (
-	"container/heap"
-	"time"
+    "container/heap"
+    "time"
 
-	"github.com/shopspring/decimal"
+    "github.com/shopspring/decimal"
 )
 
 // orderHeap is a slice of Order pointers that implements heap.Interface.
@@ -16,25 +16,25 @@ type orderHeap []*Order
 
 // Len returns the number of orders in the heap.
 func (h orderHeap) Len() int {
-	return len(h)
+    return len(h)
 }
 
 // Swap exchanges the orders at positions i and j in the heap.
 func (h orderHeap) Swap(i, j int) {
-	h[i], h[j] = h[j], h[i]
+    h[i], h[j] = h[j], h[i]
 }
 
 // Push adds a new order to the heap. The order must be of type *Order.
 func (h *orderHeap) Push(x interface{}) {
-	*h = append(*h, x.(*Order))
+    *h = append(*h, x.(*Order))
 }
 
 // Pop removes and returns the last order from the heap.
 func (h *orderHeap) Pop() interface{} {
-	n := len(*h)
-	x := (*h)[n-1]
-	*h = (*h)[:n-1]
-	return x
+    n := len(*h)
+    x := (*h)[n-1]
+    *h = (*h)[:n-1]
+    return x
 }
 
 // bidHeap implements a max-heap for buy orders, prioritizing higher prices.
@@ -44,7 +44,7 @@ type bidHeap struct{ orderHeap }
 // Less determines the ordering of buy orders in the heap.
 // Returns true if order i has higher priority than order j (higher price).
 func (h bidHeap) Less(i, j int) bool {
-	return h.orderHeap[i].Price.GreaterThan(h.orderHeap[j].Price)
+    return h.orderHeap[i].Price.GreaterThan(h.orderHeap[j].Price)
 }
 
 // askHeap implements a min-heap for sell orders, prioritizing lower prices.
@@ -54,26 +54,26 @@ type askHeap struct{ orderHeap }
 // Less determines the ordering of sell orders in the heap.
 // Returns true if order i has higher priority than order j (lower price).
 func (h askHeap) Less(i, j int) bool {
-	return h.orderHeap[i].Price.LessThan(h.orderHeap[j].Price)
+    return h.orderHeap[i].Price.LessThan(h.orderHeap[j].Price)
 }
 
 // OrderBook represents a trading pair's order book with separate bid and ask sides.
 // It maintains orders in price-time priority using heap data structures for efficient
 // matching and provides methods for order execution and market data retrieval.
 type OrderBook struct {
-	Pair string   // Trading pair identifier (e.g., "BTC-USD")
-	bids *bidHeap // Buy orders heap (max-heap by price)
-	asks *askHeap // Sell orders heap (min-heap by price)
+    Pair string   // Trading pair identifier (e.g., "BTC-USD")
+    bids *bidHeap // Buy orders heap (max-heap by price)
+    asks *askHeap // Sell orders heap (min-heap by price)
 }
 
 // NewOrderBook creates and initializes a new order book for the specified trading pair.
 // The returned order book has empty bid and ask heaps ready for order processing.
 func NewOrderBook(pair string) *OrderBook {
-	b := &bidHeap{}
-	a := &askHeap{}
-	heap.Init(b)
-	heap.Init(a)
-	return &OrderBook{Pair: pair, bids: b, asks: a}
+    b := &bidHeap{}
+    a := &askHeap{}
+    heap.Init(b)
+    heap.Init(a)
+    return &OrderBook{Pair: pair, bids: b, asks: a}
 }
 
 // Match processes an incoming order against the order book, executing trades when possible.
@@ -94,162 +94,184 @@ func NewOrderBook(pair string) *OrderBook {
 // side of the order book. Fill events are sent for both the incoming order and any
 // matched orders to track execution status.
 func (ob *OrderBook) Match(order Order, tradeCh chan<- Trade, fillCh chan<- OrderFill, originalQty decimal.Decimal) {
-	now := time.Now().Unix()
-	incomingExecutedQty := decimal.Zero
+    now := time.Now().Unix()
+    incomingExecutedQty := decimal.Zero
 
-	if order.Side == Buy {
-		for ob.asks.Len() > 0 && !order.Qty.IsZero() {
-			top := heap.Pop(ob.asks).(*Order)
-			if top.Price.GreaterThan(order.Price) {
-				heap.Push(ob.asks, top)
-				break
-			}
-			qty := min(order.Qty, top.Qty)
-			if qty.IsZero() {
-				continue
-			}
+    if order.Side == Buy {
+        for ob.asks.Len() > 0 && !order.Qty.IsZero() {
+            top := heap.Pop(ob.asks).(*Order)
+            if top.Price.GreaterThan(order.Price) {
+                heap.Push(ob.asks, top)
+                break
+            }
+            qty := min(order.Qty, top.Qty)
+            if qty.IsZero() {
+                continue
+            }
 
-			// Create trade
-			tradeCh <- Trade{
-				Pair:        ob.Pair,
-				BuyOrderID:  order.ID,
-				SellOrderID: top.ID,
-				Price:       top.Price,
-				Qty:         qty,
-			}
+            // Create trade
+            tradeCh <- Trade{
+                Pair:        ob.Pair,
+                BuyOrderID:  order.ID,
+                SellOrderID: top.ID,
+                Price:       top.Price,
+                Qty:         qty,
+            }
 
-			// Update quantities
-			order.Qty = order.Qty.Sub(qty)
-			top.Qty = top.Qty.Sub(qty)
-			incomingExecutedQty = incomingExecutedQty.Add(qty)
+            // Update quantities
+            order.Qty = order.Qty.Sub(qty)
+            top.Qty = top.Qty.Sub(qty)
+            incomingExecutedQty = incomingExecutedQty.Add(qty)
 
-			// Create fill event for the matched sell order (top)
-			topStatus := PartiallyFilled
-			if top.Qty.IsZero() {
-				topStatus = Filled
-			}
-			fillCh <- OrderFill{
-				OrderID:      top.ID,
-				Pair:         ob.Pair,
-				Side:         top.Side,
-				OriginalQty:  top.Qty.Add(qty), // Reconstruct original qty
-				ExecutedQty:  qty,
-				RemainingQty: top.Qty,
-				Price:        top.Price,
-				FillPrice:    top.Price,
-				Status:       topStatus,
-				Timestamp:    now,
-			}
+            // Create fill event for the matched sell order (top)
+            topStatus := PartiallyFilled
+            if top.Qty.IsZero() {
+                topStatus = Filled
+            }
 
-			if !top.Qty.IsZero() {
-				heap.Push(ob.asks, top)
-			}
-		}
-		if !order.Qty.IsZero() {
-			heap.Push(ob.bids, &order)
-		}
-	} else {
-		for ob.bids.Len() > 0 && !order.Qty.IsZero() {
-			top := heap.Pop(ob.bids).(*Order)
-			if top.Price.LessThan(order.Price) {
-				heap.Push(ob.bids, top)
-				break
-			}
-			qty := min(order.Qty, top.Qty)
-			if qty.IsZero() {
-				continue
-			}
+            orderStatus := PartiallyFilled
+            if order.Qty.IsZero() {
+                orderStatus = Filled
+            }
 
-			// Create trade
-			tradeCh <- Trade{
-				Pair:        ob.Pair,
-				BuyOrderID:  top.ID,
-				SellOrderID: order.ID,
-				Price:       top.Price,
-				Qty:         qty,
-			}
+            fillCh <- OrderFill{
+                OrderID:      top.ID,
+                Pair:         ob.Pair,
+                Side:         top.Side,
+                OriginalQty:  top.Qty.Add(qty), // Reconstruct original qty
+                ExecutedQty:  qty,
+                RemainingQty: top.Qty,
+                Price:        top.Price,
+                FillPrice:    top.Price,
+                Status:       topStatus,
+                Timestamp:    now,
+            }
 
-			// Update quantities
-			order.Qty = order.Qty.Sub(qty)
-			top.Qty = top.Qty.Sub(qty)
-			incomingExecutedQty = incomingExecutedQty.Add(qty)
+            fillCh <- OrderFill{
+                OrderID:      order.ID,
+                Pair:         ob.Pair,
+                Side:         order.Side,
+                OriginalQty:  order.Qty.Add(qty), // Reconstruct original qty
+                ExecutedQty:  qty,
+                RemainingQty: order.Qty,
+                Price:        top.Price,
+                FillPrice:    top.Price,
+                Status:       orderStatus,
+                Timestamp:    now,
+            }
 
-			// Create fill event for the matched buy order (top)
-			topStatus := PartiallyFilled
-			if top.Qty.IsZero() {
-				topStatus = Filled
-			}
-			fillCh <- OrderFill{
-				OrderID:      top.ID,
-				Pair:         ob.Pair,
-				Side:         top.Side,
-				OriginalQty:  top.Qty.Add(qty),
-				ExecutedQty:  qty,
-				RemainingQty: top.Qty,
-				Price:        top.Price,
-				FillPrice:    top.Price,
-				Status:       topStatus,
-				Timestamp:    now,
-			}
+            if !top.Qty.IsZero() {
+                heap.Push(ob.asks, top)
+            }
+        }
 
-			if !top.Qty.IsZero() {
-				heap.Push(ob.bids, top)
-			}
-		}
-		if !order.Qty.IsZero() {
-			heap.Push(ob.asks, &order)
-		}
-	}
+        if !order.Qty.IsZero() {
+            heap.Push(ob.bids, &order)
+        }
+    } else {
+        for ob.bids.Len() > 0 && !order.Qty.IsZero() {
+            top := heap.Pop(ob.bids).(*Order)
+            if top.Price.LessThan(order.Price) {
+                heap.Push(ob.bids, top)
+                break
+            }
+            qty := min(order.Qty, top.Qty)
+            if qty.IsZero() {
+                continue
+            }
 
-	if !incomingExecutedQty.IsZero() {
-		status := PartiallyFilled
-		if order.Qty.IsZero() {
-			status = Filled
-		}
-		fillCh <- OrderFill{
-			OrderID:      order.ID,
-			Pair:         ob.Pair,
-			Side:         order.Side,
-			OriginalQty:  originalQty,
-			ExecutedQty:  incomingExecutedQty,
-			RemainingQty: order.Qty,
-			Price:        order.Price,
-			FillPrice:    order.Price,
-			Status:       status,
-			Timestamp:    now,
-		}
-	} else if order.Qty.Equal(originalQty) {
-		fillCh <- OrderFill{
-			OrderID:      order.ID,
-			Pair:         ob.Pair,
-			Side:         order.Side,
-			OriginalQty:  originalQty,
-			ExecutedQty:  decimal.Zero,
-			RemainingQty: order.Qty,
-			Price:        order.Price,
-			FillPrice:    decimal.Zero,
-			Status:       New,
-			Timestamp:    now,
-		}
-	}
+            // Create trade
+            tradeCh <- Trade{
+                Pair:        ob.Pair,
+                BuyOrderID:  top.ID,
+                SellOrderID: order.ID,
+                Price:       top.Price,
+                Qty:         qty,
+            }
+
+            // Update quantities
+            order.Qty = order.Qty.Sub(qty)
+            top.Qty = top.Qty.Sub(qty)
+            incomingExecutedQty = incomingExecutedQty.Add(qty)
+
+            // Create fill event for the matched buy order (top)
+            topStatus := PartiallyFilled
+            if top.Qty.IsZero() {
+                topStatus = Filled
+            }
+
+            orderStatus := PartiallyFilled
+            if order.Qty.IsZero() {
+                orderStatus = Filled
+            }
+
+            fillCh <- OrderFill{
+                OrderID:      top.ID,
+                Pair:         ob.Pair,
+                Side:         top.Side,
+                OriginalQty:  top.Qty.Add(qty),
+                ExecutedQty:  qty,
+                RemainingQty: top.Qty,
+                Price:        top.Price,
+                FillPrice:    top.Price,
+                Status:       topStatus,
+                Timestamp:    now,
+            }
+
+            fillCh <- OrderFill{
+                OrderID:      order.ID,
+                Pair:         ob.Pair,
+                Side:         order.Side,
+                OriginalQty:  order.Qty.Add(qty), // Reconstruct original qty
+                ExecutedQty:  qty,
+                RemainingQty: order.Qty,
+                Price:        top.Price,
+                FillPrice:    top.Price,
+                Status:       orderStatus,
+                Timestamp:    now,
+            }
+
+            if !top.Qty.IsZero() {
+                heap.Push(ob.bids, top)
+            }
+        }
+        if !order.Qty.IsZero() {
+            heap.Push(ob.asks, &order)
+        }
+    }
+
+    if order.Qty.Equal(originalQty) {
+        fillCh <- OrderFill{
+            OrderID:      order.ID,
+            Pair:         ob.Pair,
+            Side:         order.Side,
+            OriginalQty:  originalQty,
+            ExecutedQty:  decimal.Zero,
+            RemainingQty: order.Qty,
+            Price:        order.Price,
+            FillPrice:    decimal.Zero,
+            Status:       New,
+            Timestamp:    now,
+        }
+    }
 }
 
 // BestBid returns the highest bid price in the order book.
 // Returns 0 if there are no bid orders.
 func (ob *OrderBook) BestBid() float64 {
-	if ob.bids.Len() == 0 {
-		return 0
-	}
-	return ob.bids.orderHeap[0].Price.InexactFloat64()
+    if ob.bids.Len() == 0 {
+        return 0
+    }
+    return ob.bids.orderHeap[0].Price.InexactFloat64()
 }
 
 // BestAsk returns the lowest ask price in the order book.
 // Returns 0 if there are no ask orders.
 func (ob *OrderBook) BestAsk() float64 {
-	if ob.asks.Len() == 0 {
-		return 0
-	}
-	return ob.asks.orderHeap[0].Price.InexactFloat64()
+    if ob.asks.Len() == 0 {
+        return 0
+    }
+    return ob.asks.orderHeap[0].Price.InexactFloat64()
 }
 
 // GetBidDepth returns the bid side market depth up to the specified number of price levels.
@@ -261,41 +283,41 @@ func (ob *OrderBook) BestAsk() float64 {
 //
 // Returns an empty slice if depth <= 0 or there are no bid orders.
 func (ob *OrderBook) GetBidDepth(depth int) []DepthLevel {
-	if depth <= 0 || ob.bids.Len() == 0 {
-		return []DepthLevel{}
-	}
+    if depth <= 0 || ob.bids.Len() == 0 {
+        return []DepthLevel{}
+    }
 
-	priceMap := make(map[string]decimal.Decimal)
-	countMap := make(map[string]int)
+    priceMap := make(map[string]decimal.Decimal)
+    countMap := make(map[string]int)
 
-	for _, order := range ob.bids.orderHeap {
-		priceKey := order.Price.String()
-		priceMap[priceKey] = priceMap[priceKey].Add(order.Qty)
-		countMap[priceKey]++
-	}
+    for _, order := range ob.bids.orderHeap {
+        priceKey := order.Price.String()
+        priceMap[priceKey] = priceMap[priceKey].Add(order.Qty)
+        countMap[priceKey]++
+    }
 
-	var levels []DepthLevel
-	processedPrices := make(map[string]bool)
+    var levels []DepthLevel
+    processedPrices := make(map[string]bool)
 
-	for _, order := range ob.bids.orderHeap {
-		priceKey := order.Price.String()
-		if processedPrices[priceKey] {
-			continue
-		}
+    for _, order := range ob.bids.orderHeap {
+        priceKey := order.Price.String()
+        if processedPrices[priceKey] {
+            continue
+        }
 
-		levels = append(levels, DepthLevel{
-			Price:      order.Price,
-			Quantity:   priceMap[priceKey],
-			TradeCount: countMap[priceKey],
-		})
-		processedPrices[priceKey] = true
+        levels = append(levels, DepthLevel{
+            Price:      order.Price,
+            Quantity:   priceMap[priceKey],
+            TradeCount: countMap[priceKey],
+        })
+        processedPrices[priceKey] = true
 
-		if len(levels) >= depth {
-			break
-		}
-	}
+        if len(levels) >= depth {
+            break
+        }
+    }
 
-	return levels
+    return levels
 }
 
 // GetAskDepth returns the ask side market depth up to the specified number of price levels.
@@ -307,47 +329,47 @@ func (ob *OrderBook) GetBidDepth(depth int) []DepthLevel {
 //
 // Returns an empty slice if depth <= 0 or there are no ask orders.
 func (ob *OrderBook) GetAskDepth(depth int) []DepthLevel {
-	if depth <= 0 || ob.asks.Len() == 0 {
-		return []DepthLevel{}
-	}
+    if depth <= 0 || ob.asks.Len() == 0 {
+        return []DepthLevel{}
+    }
 
-	priceMap := make(map[string]decimal.Decimal)
-	countMap := make(map[string]int)
+    priceMap := make(map[string]decimal.Decimal)
+    countMap := make(map[string]int)
 
-	for _, order := range ob.asks.orderHeap {
-		priceKey := order.Price.String()
-		priceMap[priceKey] = priceMap[priceKey].Add(order.Qty)
-		countMap[priceKey]++
-	}
+    for _, order := range ob.asks.orderHeap {
+        priceKey := order.Price.String()
+        priceMap[priceKey] = priceMap[priceKey].Add(order.Qty)
+        countMap[priceKey]++
+    }
 
-	var levels []DepthLevel
-	processedPrices := make(map[string]bool)
+    var levels []DepthLevel
+    processedPrices := make(map[string]bool)
 
-	for _, order := range ob.asks.orderHeap {
-		priceKey := order.Price.String()
-		if processedPrices[priceKey] {
-			continue
-		}
+    for _, order := range ob.asks.orderHeap {
+        priceKey := order.Price.String()
+        if processedPrices[priceKey] {
+            continue
+        }
 
-		levels = append(levels, DepthLevel{
-			Price:      order.Price,
-			Quantity:   priceMap[priceKey],
-			TradeCount: countMap[priceKey],
-		})
-		processedPrices[priceKey] = true
+        levels = append(levels, DepthLevel{
+            Price:      order.Price,
+            Quantity:   priceMap[priceKey],
+            TradeCount: countMap[priceKey],
+        })
+        processedPrices[priceKey] = true
 
-		if len(levels) >= depth {
-			break
-		}
-	}
+        if len(levels) >= depth {
+            break
+        }
+    }
 
-	return levels
+    return levels
 }
 
 // min returns the smaller of two decimal values.
 func min(a, b decimal.Decimal) decimal.Decimal {
-	if a.LessThan(b) {
-		return a
-	}
-	return b
+    if a.LessThan(b) {
+        return a
+    }
+    return b
 }
