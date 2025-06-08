@@ -1,0 +1,25 @@
+# Go files (use gofmt instead)
+*.go
+
+# Generated files
+go.mod
+go.sum
+
+# Build artifacts
+/dist
+/build
+/bin
+
+# Dependencies
+node_modules
+vendor
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db 
