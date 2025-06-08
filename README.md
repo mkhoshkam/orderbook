@@ -1,6 +1,7 @@
 # Orderbook Engine
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/mkhoshkam/orderbook.svg)](https://pkg.go.dev/github.com/mkhoshkam/orderbook)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mkhoshkam/orderbook)](https://goreportcard.com/report/github.com/mkhoshkam/orderbook)
 
 A high-performance order matching engine with real-time market data streaming capabilities. This engine implements a price-time priority matching algorithm using heap-based data structures for efficient order management and execution.
 
