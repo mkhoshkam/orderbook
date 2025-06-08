@@ -181,6 +181,73 @@ The test suite covers:
 - ✅ Multi-pair trading
 - ✅ Thread safety
 
+## Code Quality
+
+This project follows Go standards for code formatting and quality with automated checks.
+
+### Formatting and Linting
+
+The project uses standard Go tools for maintaining code quality:
+
+- **`gofmt`** - Standard Go code formatting
+- **`goimports`** - Import organization and formatting
+- **`go vet`** - Static analysis for common issues
+- **`golangci-lint`** - Comprehensive linting with multiple analyzers
+
+### Development Commands
+
+Use the provided Makefile for consistent code quality:
+
+```bash
+# Format code
+make fmt
+
+# Check formatting (without changes)
+make fmt-check
+
+# Run linter
+make lint
+
+# Run static analysis
+make vet
+
+# Run tests
+make test
+
+# Run all quality checks
+make check
+
+# Install required tools
+make install-tools
+```
+
+### GitHub Actions Integration
+
+Code quality is automatically enforced via GitHub Actions on every push and pull request:
+
+- ✅ **Code formatting** - Ensures consistent style with `gofmt` and `goimports`
+- ✅ **Static analysis** - Checks for common issues with `go vet`
+- ✅ **Linting** - Comprehensive code quality checks with `golangci-lint`
+- ✅ **Test execution** - Runs full test suite with coverage reporting
+
+### Local Development Setup
+
+1. **Install tools:**
+   ```bash
+   make install-tools
+   ```
+
+2. **Format and check code before committing:**
+   ```bash
+   make check
+   ```
+
+3. **Set up pre-commit hook (optional):**
+   ```bash
+   echo "make check" > .git/hooks/pre-commit
+   chmod +x .git/hooks/pre-commit
+   ```
+
 ## Documentation
 
 ### Godoc Documentation
