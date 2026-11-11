@@ -22,6 +22,7 @@ type Order struct {
 	Price decimal.Decimal // Price per unit for the order
 	Qty   decimal.Decimal // Quantity/amount to trade
 	Time  int64           // Unix timestamp when the order was created
+	seq   uint64
 }
 
 // Trade represents a successful match between two orders resulting in an execution.
