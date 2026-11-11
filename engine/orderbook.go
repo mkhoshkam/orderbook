@@ -45,6 +45,9 @@ type bidHeap struct{ orderHeap }
 // Less determines the ordering of buy orders in the heap.
 // Returns true if order i has higher priority than order j (higher price).
 func (h bidHeap) Less(i, j int) bool {
+	if h.orderHeap[i].Price.Equal(h.orderHeap[j].Price) {
+		return h.orderHeap[i].seq < h.orderHeap[j].seq
+	}
 	return h.orderHeap[i].Price.GreaterThan(h.orderHeap[j].Price)
 }
 
@@ -55,6 +58,9 @@ type askHeap struct{ orderHeap }
 // Less determines the ordering of sell orders in the heap.
 // Returns true if order i has higher priority than order j (lower price).
 func (h askHeap) Less(i, j int) bool {
+	if h.orderHeap[i].Price.Equal(h.orderHeap[j].Price) {
+		return h.orderHeap[i].seq < h.orderHeap[j].seq
+	}
 	return h.orderHeap[i].Price.LessThan(h.orderHeap[j].Price)
 }
 
@@ -66,6 +72,7 @@ type OrderBook struct {
 	bids  *bidHeap   // Buy orders heap (max-heap by price)
 	asks  *askHeap   // Sell orders heap (min-heap by price)
 	mutex sync.Mutex // Protects concurrent access to the order book
+	seq   uint64
 }
 
 // NewOrderBook creates and initializes a new order book for the specified trading pair.
@@ -171,6 +178,8 @@ func (ob *OrderBook) Match(order Order, tradeCh chan<- Trade, fillCh chan<- Orde
 		}
 
 		if !order.Qty.IsZero() {
+			ob.seq++
+			order.seq = ob.seq
 			heap.Push(ob.bids, &order)
 		}
 	} else {
@@ -241,6 +250,8 @@ func (ob *OrderBook) Match(order Order, tradeCh chan<- Trade, fillCh chan<- Orde
 			}
 		}
 		if !order.Qty.IsZero() {
+			ob.seq++
+			order.seq = ob.seq
 			heap.Push(ob.asks, &order)
 		}
 	}

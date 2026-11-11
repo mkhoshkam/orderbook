@@ -120,6 +120,97 @@ func TestOrderBookMatching(t *testing.T) {
 	}
 }
 
+func TestEqualPriceOrdersMatchFIFO(t *testing.T) {
+	tests := []struct {
+		name      string
+		makerSide Side
+		takerSide Side
+		makerIDs  []string
+		takerID   string
+	}{
+		{
+			name:      "asks",
+			makerSide: Sell,
+			takerSide: Buy,
+			makerIDs:  []string{"S1", "S2", "S3", "S4", "S5"},
+			takerID:   "B1",
+		},
+		{
+			name:      "bids",
+			makerSide: Buy,
+			takerSide: Sell,
+			makerIDs:  []string{"B1", "B2", "B3", "B4", "B5"},
+			takerID:   "S1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ob := NewOrderBook("BTC-USDT")
+			tradeCh := make(chan Trade, len(tt.makerIDs))
+			fillCh := make(chan OrderFill, 32)
+			price := decimal.NewFromInt(100)
+			qty := decimal.NewFromInt(1)
+
+			for i, id := range tt.makerIDs {
+				order := Order{
+					ID:    id,
+					Side:  tt.makerSide,
+					Price: price,
+					Qty:   qty,
+					Time:  int64(i + 1),
+				}
+				ob.Match(order, tradeCh, fillCh, qty)
+			}
+
+			takerQty := decimal.NewFromInt(int64(len(tt.makerIDs)))
+			taker := Order{
+				ID:    tt.takerID,
+				Side:  tt.takerSide,
+				Price: price,
+				Qty:   takerQty,
+			}
+			ob.Match(taker, tradeCh, fillCh, takerQty)
+
+			for _, wantID := range tt.makerIDs {
+				trade := <-tradeCh
+				makerID := trade.SellOrderID
+				if tt.makerSide == Buy {
+					makerID = trade.BuyOrderID
+				}
+				if makerID != wantID {
+					t.Errorf("expected maker %s, got %s", wantID, makerID)
+				}
+			}
+		})
+	}
+}
+
+func TestPartiallyFilledMakerKeepsFIFOPosition(t *testing.T) {
+	ob := NewOrderBook("BTC-USDT")
+	tradeCh := make(chan Trade, 3)
+	fillCh := make(chan OrderFill, 16)
+	price := decimal.NewFromInt(100)
+
+	first := Order{ID: "S1", Side: Sell, Price: price, Qty: decimal.NewFromInt(2)}
+	second := Order{ID: "S2", Side: Sell, Price: price, Qty: decimal.NewFromInt(1)}
+	ob.Match(first, tradeCh, fillCh, first.Qty)
+	ob.Match(second, tradeCh, fillCh, second.Qty)
+
+	partialTaker := Order{ID: "B1", Side: Buy, Price: price, Qty: decimal.NewFromInt(1)}
+	ob.Match(partialTaker, tradeCh, fillCh, partialTaker.Qty)
+
+	taker := Order{ID: "B2", Side: Buy, Price: price, Qty: decimal.NewFromInt(2)}
+	ob.Match(taker, tradeCh, fillCh, taker.Qty)
+
+	for _, wantID := range []string{"S1", "S1", "S2"} {
+		trade := <-tradeCh
+		if trade.SellOrderID != wantID {
+			t.Errorf("expected maker %s, got %s", wantID, trade.SellOrderID)
+		}
+	}
+}
+
 // TestPartialFill tests partial order filling
 func TestPartialFill(t *testing.T) {
 	ob := NewOrderBook("BTC-USDT")
